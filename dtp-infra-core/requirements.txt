@@ -1,0 +1,4 @@
+boto3
+pytest
+psycopg2-binary
+sqlalchemy

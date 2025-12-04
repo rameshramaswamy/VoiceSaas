@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+websockets
+python-dotenv
+structlog
+deepgram-sdk>=3.0.0
+opena>=1.0.0
+numpy
+prometheus-client
+onnxruntime
+uvloop

@@ -1,0 +1,66 @@
+name: Infrastructure Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Scan Terraform configs for misconfigurations (e.g., public buckets)
+      - name: Run Tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        
+  security-compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: dtp-infra-core/terraform
+          framework: terraform
+          # Fail pipeline if High/Critical issues found
+          soft_fail: false 
+          skip_check: CKV_AWS_1 # Example: Skip specific check if needed
+  
+  terraform-plan:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./dtp-infra-core/terraform/environments/staging
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Terraform Plan
+        run: terraform plan -var="vpc_cidr=10.0.0.0/16"
+
+  test-db-isolation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: dtp_core
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install psycopg2-binary pytest
+      - name: Run RLS Tests
+        run: pytest dtp-infra-core/tests/infra/test_rls.py

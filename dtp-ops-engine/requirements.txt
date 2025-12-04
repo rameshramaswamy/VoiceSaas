@@ -1,0 +1,9 @@
+redis
+sqlalchemy
+asyncpg
+pydantic
+pydantic-settings
+structlog
+stripe
+sentry-sdk
+python-dotenv

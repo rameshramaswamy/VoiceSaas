@@ -1,0 +1,2 @@
+check: CKV_AWS_*
+skip_check: CKV_AWS_1
